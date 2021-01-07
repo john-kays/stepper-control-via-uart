@@ -1,56 +1,97 @@
 #include <Stepper.h>
 
-//  Define serial input flags
-const int CW_X_FLAG = 1;  // Send a character '1' over serial to move horizontal-axis motor clockwise
-const int CCW_X_FLAG = 2; // Send a character '2' over serial to move horizontal-axis motor counterclockwise
+/* Private defines ---------------------------------------------------- */
+#define STEPPER_HP_1                (8)
+#define STEPPER_HP_2                (9)
+#define STEPPER_HP_3                (10)
+#define STEPPER_HP_4                (11)
 
+#define STEPPER_STEPS_PER_REV       (200)
+#define NUM_STEPS_PER_REQ           (10)
+#define STEPPER_SPEED               (35)
 
-//  Define stepper motor pins
-//    Horizontal plane motor
-const int STEPPER_HP_1 = 8;
-const int STEPPER_HP_2 = 9;
-const int STEPPER_HP_3 = 10;
-const int STEPPER_HP_4 = 11;
+/* Private enumerate/structure ---------------------------------------- */
+/* Private macros ----------------------------------------------------- */
+/* Public variables --------------------------------------------------- */
+/* Private constan ---------------------------------------------------- */
+static const String SET_SPEED_CMD               = "SP";
+static const String CLOCKWISE_CMD               = "TL";
+static const String COUNTER_CLOCKWISE_CMD       = "TR";
 
-
-//  Define stepper motor parameters
-const int STEPPER_STEPS_PER_REV = 200; //  steps per revolution
-const int NUM_STEPS_PER_REQ = 10;
-const int STEPPER_SPEED = 35;
-
-//  Initialize the stepper motors
-//      CW = forward = positive step, CCW = backward = negative step
-//    Horizontal plane
+/* Private variables -------------------------------------------------- */
+static String m_uart_data_receive = "";
+static String m_uart_cmd = "";
+static String m_uart_data = "";
+static boolean m_uart_string_complete = false;
+static float m_float_data_value = 0;
 Stepper stepper_motor_hp(STEPPER_STEPS_PER_REV, STEPPER_HP_1, STEPPER_HP_2, STEPPER_HP_3, STEPPER_HP_4);
 
+/* Private function prototypes ---------------------------------------- */
+static void uart_receive_and_execute(void);
 
-//  Initialize some working variables
-char in_byte = ' ';
-int in_num;
-
-/*
- * Expecting an ASCII character of an integer ('0' --> '9') as serial input, 
- * returns that ASCII integer as an int.
- */
-int get_serial_input_as_int() {
-  in_byte = Serial.read();
-
-  return int(in_byte - '0');  //  Input is ASCII character of a single digit integer. Convert to int.
-}
-
-
-void setup() {
+void setup()
+{
   Serial.begin(9600);
 
   stepper_motor_hp.setSpeed(STEPPER_SPEED);
-
 }
 
-void loop() {
-  if(Serial.available()) {
-    in_num = get_serial_input_as_int();
-    
-    if(in_num == CCW_X_FLAG) { stepper_motor_hp.step(-NUM_STEPS_PER_REQ); }
-    else if (in_num == CW_X_FLAG) { stepper_motor_hp.step(NUM_STEPS_PER_REQ); }
-  }  
+void loop()
+{
+  uart_receive_and_execute();
+}
+
+/* Private function definitions --------------------------------------- */
+/**
+ * @brief       Uart receive data and execute
+ *
+ * @param[in]   None
+ *
+ * @attention   None
+ *
+ * @return      None
+ */
+static void uart_receive_and_execute(void)
+{
+  while (Serial.available()) // Receive data from computer
+  {
+    char data = (char)Serial.read();
+    m_uart_data_receive += data;
+
+    if (data == '\n')
+    {
+      m_uart_string_complete = true;
+    }
+
+    if (m_uart_string_complete)
+    {
+      m_uart_string_complete = false;
+      Serial.println(m_uart_data_receive);
+
+      m_uart_cmd = m_uart_data_receive.substring(0, 2);
+      m_uart_data = m_uart_data_receive.substring(3);
+      m_float_data_value = m_uart_data.toFloat();
+      Serial.println(m_uart_cmd);
+      Serial.println(m_uart_data);
+      Serial.println(m_float_data_value);
+
+      if (CLOCKWISE_CMD == m_uart_cmd)
+      {
+        Serial.println("Set motor run clockwise");
+        stepper_motor_hp.step(m_float_data_value);
+      }
+      else if (COUNTER_CLOCKWISE_CMD == m_uart_cmd)
+      {
+        Serial.println("Set motor run counter clockwise");
+        stepper_motor_hp.step(m_float_data_value);
+      }
+      else if (SET_SPEED_CMD == m_uart_cmd)
+      {
+        Serial.println("Set motor speed");
+        stepper_motor_hp.setSpeed(m_float_data_value);
+      }
+
+      m_uart_data_receive = "";
+    }
+  }
 }
