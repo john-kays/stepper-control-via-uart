@@ -83,7 +83,7 @@ static void uart_receive_and_execute(void)
       else if (COUNTER_CLOCKWISE_CMD == m_uart_cmd)
       {
         Serial.println("Set motor run counter clockwise");
-        stepper_motor_hp.step(m_float_data_value);
+        stepper_motor_hp.step(-m_float_data_value);
       }
       else if (SET_SPEED_CMD == m_uart_cmd)
       {
