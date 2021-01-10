@@ -4,14 +4,15 @@
 ## 1. PUL       => DIGITAL 8 (Arduino)
 ## 2. DIR       => DIGITAL 9 (Arduino)
 ## 3. ENA       => DIGITAL 10(Arduino)
+## 4. OPTO      => 5V        (Arduino)
 ## ------------------------------------
-## 4. GND       = > GND  (12V Power)
-## 4. 12v       = > +Vdc (12v Power)
+## 5. GND       = > GND  (12V Power)
+## 6. 12v       = > +Vdc (12v Power)
 ## ------------------------------------
-## 4. A+        => Blue  (Stepper)
-## 4. A-        => Red   (Stepper)
-## 4. B+        => Green (Stepper)
-## 4. B-        => Black (Stepper)
+## 7. A+        => Blue  (Stepper)
+## 8. A-        => Red   (Stepper)
+## 9. B+        => Green (Stepper)
+## 10. B-       => Black (Stepper)
 ## ------------------------------------
 
 # II. COMMAND TO SET AND READ MOTOR STATUS
