@@ -1,6 +1,9 @@
 # stepper-control-via-uart
 # II. HARDWARE CONNECTION
 ## ------------------------------------
+## 1. Uart Baurd Rate: 11520
+## 2. Pulse/rev: 800 
+## ------------------------------------
 ## 1. PUL       => DIGITAL 8 (Arduino)
 ## 2. DIR       => DIGITAL 9 (Arduino)
 ## 3. ENA       => DIGITAL 10(Arduino)
