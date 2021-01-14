@@ -35,10 +35,19 @@
 #define STEPPER_DEFAULT_SPEED_RPM   (60)
 
 /* Private enumerate/structure ---------------------------------------- */
+/**
+ * @brief Serial event
+ */
+typedef enum
+{
+  SERIAL_OK,
+  SERIAL_INTERRUPT
+}
+serial_evt_t;
+
 /* Private macros ----------------------------------------------------- */
 /* Public variables --------------------------------------------------- */
 /* Private constant --------------------------------------------------- */
-
 static const String SET_SPEED_CMD               = "SP";
 static const String CLOCKWISE_CMD               = "TL";
 static const String COUNTER_CLOCKWISE_CMD       = "TR";
@@ -61,8 +70,8 @@ static int16_t m_stepper_speed_ppm = REVOLUTION_PER_MINUITE * m_stepper_speed_rp
 AccelStepper stepper(AccelStepper::DRIVER, STEPPER_STEP_PIN, STEPPER_DIR_PIN);
 
 /* Private function prototypes ---------------------------------------- */
-static void uart_receive_and_execute(void);
-void m_stepper_set_position(int16_t degree);
+static serial_evt_t uart_receive_and_execute(void);
+static void m_stepper_set_position(int16_t degree);
 
 /* Function definitions ----------------------------------------------- */
 void setup()
@@ -86,9 +95,11 @@ void loop()
  *
  * @attention   None
  *
- * @return      None
+ * @return
+ *     - SERIAL_OK
+ *     - SERIAL_INTERRUPT
  */
-static void uart_receive_and_execute(void)
+static serial_evt_t uart_receive_and_execute(void)
 {
   while (Serial.available()) // Receive data from computer
   {
@@ -117,11 +128,15 @@ static void uart_receive_and_execute(void)
       {
         Serial.println("Set motor run clockwise");
         m_stepper_set_position(m_float_data_value);
+
+        return SERIAL_INTERRUPT;
       }
       else if (COUNTER_CLOCKWISE_CMD == m_uart_cmd)
       {
         Serial.println("Set motor run counter clockwise");
         m_stepper_set_position(-m_float_data_value);
+
+        return SERIAL_INTERRUPT;
       }
       else if (SET_SPEED_CMD == m_uart_cmd)
       {
@@ -142,15 +157,17 @@ static void uart_receive_and_execute(void)
       {
         int16_t encoder = 0;
         encoder = (int)(stepper.currentPosition() / STEP_PER_DEGREE) % 360;
-        encoder = encoder < 0 ? (-encoder) : encoder;
+        encoder = encoder < 0 ? (- encoder) : encoder;
         Serial.print("Motor encoder: ");
         Serial.println(encoder);
       }
     }
   }
+
+  return SERIAL_OK;
 }
 
-void m_stepper_set_position(int16_t degree)
+static void m_stepper_set_position(int16_t degree)
 {
   signed long step;
   Serial.print("Step per degree: ");
@@ -160,6 +177,7 @@ void m_stepper_set_position(int16_t degree)
   Serial.print("Pulses have to run: ");
   Serial.println(step);
 
+  stepper.stop();
   stepper.setCurrentPosition(0);
   stepper.moveTo(step);
   while (stepper.currentPosition() != step)
@@ -173,13 +191,16 @@ void m_stepper_set_position(int16_t degree)
       stepper.setSpeed(-m_stepper_speed_ppm);
     }
     stepper.runSpeed();
-    uart_receive_and_execute();
+    if (SERIAL_INTERRUPT == uart_receive_and_execute())
+    {
+      break;
+    }
   }
   stepper.stop();
   Serial.println(stepper.currentPosition());
 }
 
-void m_stepper_set_speed(uint16_t speed_rpm)
+static void m_stepper_set_speed(uint16_t speed_rpm)
 {
   m_stepper_speed_rpm = speed_rpm;
   m_stepper_speed_ppm = REVOLUTION_PER_MINUITE * speed_rpm;
