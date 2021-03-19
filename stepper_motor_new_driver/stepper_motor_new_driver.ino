@@ -116,12 +116,12 @@ static void uart_receive_and_execute(void)
       if (CLOCKWISE_CMD == m_uart_cmd)
       {
         Serial.println("Set motor run clockwise");
-        m_stepper_set_position(m_float_data_value);
+        m_stepper_set_position(-m_float_data_value);
       }
       else if (COUNTER_CLOCKWISE_CMD == m_uart_cmd)
       {
         Serial.println("Set motor run counter clockwise");
-        m_stepper_set_position(-m_float_data_value);
+        m_stepper_set_position(m_float_data_value);
       }
       else if (SET_SPEED_CMD == m_uart_cmd)
       {
